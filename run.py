@@ -34,6 +34,7 @@ try:
 except:
     print "\033[91m\033[1m[FATAL ERROR] Couldn't load required modules.\033[0m"
     exit(0)
+
 def short_url(url):
     res=urlopen("http://po.st/api/shorten?apiKey=%s&longUrl=%s" % (config.API_KEY, quote(url))).read()
     exec('def content():\n\treturn %s' % res)
@@ -45,6 +46,15 @@ except:
     exit(0)
 pynotify.init("Clipie")
 print "\033[94mClipie has started successfully!\033[0m"
+def checkurl(url):
+	url=url[url.find('//')+2:]
+	for i in config.BLACKLIST:
+		if url.find(i)==0:
+			return False
+	for i in config.WHITELIST:
+		if url.find(i)==0:
+                        return 'dontask'
+	return True
 if __name__=='__main__':
     cache=clipboard.paste()
     while 1:
@@ -52,9 +62,11 @@ if __name__=='__main__':
     	if content!=cache:
     	    if content and (content.find('http://')==0 or content.find('https://')==0):
     		shorturl=content
+		check=checkurl(content)
+		if not check: cache=shorturl; continue
     		if len(content)>150:
     		    content=content[:150]+'...'
-    		if easygui.ynbox('Do you want to short %s?' % content, 'Clipie', ('Yes', 'No')):
+    		if check=='dontask' or easygui.ynbox('Do you want to shrink %s?' % content, 'Clipie', ('Yes', 'No')):
                     shorturl=short_url(shorturl)
     		    clipboard.copy(shorturl)
     		    n = pynotify.Notification("Clipie", "Copied URL: %s" % shorturl)
